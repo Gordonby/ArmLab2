@@ -5,7 +5,6 @@
     "virtualMachineName": {
       "type": "string"
     }
-
   },
   "variables": {
   },
@@ -16,12 +15,16 @@
       "apiVersion": "2017-04-26-preview",
       "location": "[resourceGroup().location]",
       "properties": {
-        "status": "On",
+        "status": "Enabled",
         "taskType": "ComputeVmShutdownTask",
         "dailyRecurrence": {
-          "time": "19:00:00"
+          "time": "1900"
         },
-        "timeZoneId": "GMT",
+        "timeZoneId": "GMT Standard Time",
+        "notificationSettings": {
+          "status": "Disabled",
+          "timeInMinutes": 30
+        },
         "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
       }
     }
