@@ -170,7 +170,7 @@ You should have something that looks like this
 
 1. Deploy to Azure, using a new VM Name and checking afterwards to make sure the Shutdown Policy service has been created
 
-# Exercise 3 : Conditional Services
+# Exercise 4 : Conditional Services
 
 A common activity is needing to only deploy certain Azure services, based on parameter input.  In this exercise, we will explore this using a load balancer as an example.
 
