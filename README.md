@@ -22,7 +22,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
 **Estimated time to complete this lab: *120* minutes**
 
-# Exercise : Add a VM to an existing template
+# Exercise 1 : Add a VM to an existing template
 
 1. In the Azure Portal, create a virtual network in a new Resource Group.
 
@@ -76,7 +76,7 @@ You should have something that looks like this
 
 1. At this stage several changes have been made, all of which we haven't tested out by deploying the VM.  Therefore we should deploy the VM to Azure and make sure creation completes successfully before proceeding too far.
 
-# Exercise : Parameters
+# Exercise 2 : Parameters
 
 1. Add a new parameter to allow the user to select the VmSize
 
@@ -128,7 +128,7 @@ You should have something that looks like this
         "vmVmSize": "[Variables('VmShirtSize')[Parameters('VmSize')]]",
     ...
 
-# Exercise : Nested templates
+# Exercise 3 : Nested templates
 
 1. Create a folder within your *Resource Group Project* called *nested*
 
@@ -144,22 +144,22 @@ You should have something that looks like this
 
     ```json
         {
-        "apiVersion": "2017-05-10",
-        "name": "Shutdown-policy",
-        "type": "Microsoft.Resources/deployments",
-        "properties": {
-            "mode": "incremental",
-            "templateLink": {
-            "uri": "[concat(variables('nestedTemplateRoot') ,'Shutdown.json')]",
-            "contentVersion": "1.0.0.0"
+            "apiVersion": "2017-05-10",
+            "name": "Shutdown-policy",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                "uri": "[concat(variables('nestedTemplateRoot') ,'Shutdown.json')]",
+                "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                "virtualMachineName": { "value": "[parameters('vmName')]" }
+                }
             },
-            "parameters": {
-            "virtualMachineName": { "value": "[parameters('vmName')]" }
-            }
-        },
-        "dependsOn": [
-            "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
-        ]
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+            ]
         }
 
     ```json
