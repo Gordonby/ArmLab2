@@ -4,12 +4,6 @@
 This lab assumes you have completed the earlier IaaS lab https://aka.ms/armlab
 It takes you to a point when you have a single VM deployed in a new vnet, using a storage account for disk storage.
 
-## Abstract
-
-During this lab, you will build on the infrastructure design from the Arm Lab.
-You will extend a single VM environment to use a load balancer, availability set and with another VM sitting alongside.
-We will introduce the concept of nested templates and a more advanced use of parameters including "Parameters as Objects".
-
 ## Learning Objectives
 
 1. Working with existing Azure resources
