@@ -162,6 +162,8 @@ You should have something that looks like this
             ]
         }
 
-
+1. Add the variable *nestedTemplateRoot* in the variables section
     ```json
         "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/"
+
+1. Deploy to Azure, using a new VM Name and checking afterwards to make sure the Shutdown Policy service has been created
