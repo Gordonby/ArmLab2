@@ -57,7 +57,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
             }
           },
     ```
-1. Now remove all references to the storage account from the template as it is no longer needed.
+1. Now remove all references to the storage account from the template as it is no longer needed.  Visual Studio can help this process, in the JSON Outline, find the *Storage* resource 
 
 1. We need to change the API version for the *Virtual Machine*  because the older API versions don't know about managed disks.  
     ```json
