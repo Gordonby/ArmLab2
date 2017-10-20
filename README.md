@@ -250,18 +250,18 @@ A common activity is needing to only deploy certain Azure services, based on par
             }
             }
 
-1. In the variables section
+1. In the variables section, lets add a object which will contain the configuration for the Load Balancer Address Pools.  By using variables to store Objects, rather than plain strings we make its purpose simpler to understand and easier to implement in the resource part of the template.
 
     ```json
         //load balancer
         "loadBalancerName": "lb",
         "loadBalancerConfig": {
-        "None": [],
-        "Configured": [
-            {
-            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
-            }
-        ]
+            "None": [],
+            "Configured": [
+                {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
+                }
+            ]
         }
 
 
