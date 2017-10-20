@@ -65,12 +65,9 @@ We will introduce the concept of nested templates and a more advanced use of par
     ```
 1. Now remove all references to the storage account from the template as it is no longer needed.
 
-1. Make sure to change the API version in the *Virtual Machine* definition to
+1. We need to change the API version for the *Virtual Machine*  because the older API versions don't know about managed disks.  
     ```json
-        "apiVersion": "2016-04-30-preview"
-    ...
-   
-   We need to do this because the older API versions don't know about managed disks.
+        "apiVersion": "2016-04-30-preview"  
 
 1. Add *2016-Datacenter* to the parameter list of Windows OS Versions and make it the default
 
@@ -84,9 +81,6 @@ You should have something that looks like this
     ![image](./media/StageOneParamsVariables.png) 
 
 1. At this stage several changes have been made, all of which we haven't tested out by deploying the VM.  Therefore we should deploy the VM to Azure and make sure creation completes successfully before proceeding too far.
-
-
-
 
 # Exercise : Parameters
 
@@ -142,4 +136,37 @@ You should have something that looks like this
 
 # Exercise : Nested templates
 
-1. 
+1. Create a folder within your *Resource Group Project* called *nested*
+
+1. Download the file from here: https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/Shutdown.json and put it in the *nested folder*
+
+1. If you examine the file, you'll see it's exactly the same template format that you're used to.  This template takes 1 parameter, the *Virtual Machine Name* and creates a scheduled shutdown of it at 7pm.  
+
+1. In order to call this template from our main template file, we have to add a resource of *Microsoft.Resources/deployments*
+
+1. Add the resouce to your template, noticing that we're 
+    1. Passing a parameter down to the template for the VM Name that comes from the main template Parameters
+    1. Specifying a variable to be used as the path to the Nested Template.  This could be a local path or an http one.
+
+    ```json
+        {
+        "apiVersion": "2017-05-10",
+        "name": "Shutdown-policy",
+        "type": "Microsoft.Resources/deployments",
+        "properties": {
+            "mode": "incremental",
+            "templateLink": {
+            "uri": "[concat(variables('nestedTemplateRoot') ,'Shutdown.json')]",
+            "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+            "virtualMachineName": { "value": "[parameters('vmName')]" }
+            }
+        },
+        "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        ]
+        }
+
+    ```json
+        "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/"
