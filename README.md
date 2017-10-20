@@ -34,7 +34,7 @@ We will introduce the concept of nested templates and a more advanced use of par
 
 1. Create two subnets, "Windows-Sandbox" and "Linux-Sandbox"
 
-1. In Visual Studio, create a new Resouce project and proceed using a **Blank Template** and click **OK**.
+1. In Visual Studio, create a new *Azure Resource Group* project and proceed using a **Blank Template** and click **OK**.
 
     ![image](./media/image3.png)
 
@@ -44,9 +44,9 @@ We will introduce the concept of nested templates and a more advanced use of par
 
     - Set the resource **Name** to *vm*.
 
-    - Set the **Storage account** field to *tmpstorage*, we will be removing this reference from the template in a later step.
+    - For the **Storage account**, select create new and name it *tmpstorage*, we will be removing this reference from the template in a later step.
 
-    - Select from the **Virtual network/subnet** dropdown the Virtual Network that you created in the portal, and the Windows subnet
+    - Select from the **Virtual network/subnet** dropdown the Virtual Network that you created in the portal, and the *Windows subnet*
 
     - Click **Add**.
 
@@ -65,16 +65,16 @@ We will introduce the concept of nested templates and a more advanced use of par
     ```
 1. Now remove all references to the storage account from the template as it is no longer needed.
 
-1. Make sure to change the API version in the Virtual Machine definition to
+1. Make sure to change the API version in the *Virtual Machine* definition to
     ```json
         "apiVersion": "2016-04-30-preview"
     ...
    
-We need to do this because the older API versions don't know about managed disks.
+   We need to do this because the older API versions don't know about managed disks.
 
-1. Add *2016-Datacenter* to the list of Windows Os Versions and make it the default
+1. Add *2016-Datacenter* to the parameter list of Windows OS Versions and make it the default
 
-1. Reduce the list of tempalte parameters to
+1. Now we want tor educe the list of template parameters to really just being the ones we want the user to supply;
     1. vmName
     1. vmAdminPassword
     1. vmWindowsOSVersion
@@ -83,7 +83,12 @@ You'll do this by creating variables with the same name, then changing the refer
 You should have something that looks like this
     ![image](./media/StageOneParamsVariables.png) 
 
-1. Deploy the VM to Azure and make sure creation completed successfully.
+1. At this stage several changes have been made, all of which we haven't tested out by deploying the VM.  Therefore we should deploy the VM to Azure and make sure creation completes successfully before proceeding too far.
+
+
+
+
+# Exercise : Parameters
 
 1. Add a new parameter to allow the user to select the VmSize
 
@@ -105,10 +110,35 @@ You should have something that looks like this
 
 1. Change the VMName parameter and deploy to Azure again.
 
+1. Extend the VmSize Parameter to have a third option 
 
-# Exercise : Parameters
+    ```json
+        "VmSize": {
+            "type": "string",
+            "defaultValue": "Small",
+            "allowedValues": [
+                "Small",
+                "Medium",
+                "Large"
+            ]
+            }
+    ...
 
-1. 
+1. Add a new Variable that will help us translate between the friendly VM Size value and the actual Azure VM Size we need for the template.
+
+    ```json
+        "VmShirtSize": {
+            "Small": "Standard_A0",
+            "Medium": "Standard_A3",
+            "Large": "Standard_D2_V2"
+        },
+    ...
+
+1. Now we can changed the *vmVmSize* variable, replacing the If statement with something a little more clever.
+
+    ```json
+        "vmVmSize": "[Variables('VmShirtSize')[Parameters('VmSize')]]",
+    ...
 
 # Exercise : Nested templates
 
