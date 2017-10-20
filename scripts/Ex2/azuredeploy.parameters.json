@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmName": {
-      "value": "myvm8"
+      "value": "myvm13"
     },
     "vmAdminPassword": {
       "value": "aVMp0ll0PW$$padd%"

@@ -69,7 +69,8 @@ We will introduce the concept of nested templates and a more advanced use of par
     ```json
         "apiVersion": "2016-04-30-preview"
     ...
-   We need to do this because the older API versions don't know about managed disks.
+   
+We need to do this because the older API versions don't know about managed disks.
 
 1. Add *2016-Datacenter* to the list of Windows Os Versions and make it the default
 

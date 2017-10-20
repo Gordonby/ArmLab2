@@ -115,7 +115,7 @@
     },
     {
       "apiVersion": "2017-05-10",
-      "name": "linkedTemplate",
+      "name": "Shutdown-policy",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "incremental",
@@ -126,7 +126,10 @@
         "parameters": {
           "virtualMachineName": { "value": "[parameters('vmName')]" }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ]
     }
 
   ],

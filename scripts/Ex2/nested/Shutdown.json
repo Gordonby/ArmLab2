@@ -12,8 +12,9 @@
     {
       "name": "[concat('shutdown-computevm-', parameters('virtualMachineName'))]",
       "type": "Microsoft.DevTestLab/schedules",
-      "apiVersion": "2017-04-26-preview",
+      "apiVersion": "2016-05-15",
       "location": "[resourceGroup().location]",
+      "scale": null,
       "properties": {
         "status": "Enabled",
         "taskType": "ComputeVmShutdownTask",
@@ -25,7 +26,11 @@
           "status": "Disabled",
           "timeInMinutes": 30
         },
-        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]",
+
+        "dependsOn": [
+          "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachineName'))]"
+        ]
       }
     }
   ],
