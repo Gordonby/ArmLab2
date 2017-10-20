@@ -187,7 +187,7 @@ A common activity is needing to only deploy certain Azure services, based on par
             ]
         }
 
-1. Add a Load Balancer resource to the template.
+1. Add a Load Balancer resource to the template.  Notice the first propery, *Condition*.  We use this to check the value of the Environment parameter.  If it is "Prod" then *true* is returned and the resource will be deployed.
 
     ```json
         {
