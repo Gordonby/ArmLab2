@@ -20,6 +20,8 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
 1. Passing parameters to nested templates
 
+1. Conditionally installing services
+
 **Estimated time to complete this lab: *120* minutes**
 
 # Exercise 1 : Add a VM to an existing template
@@ -167,3 +169,107 @@ You should have something that looks like this
         "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/"
 
 1. Deploy to Azure, using a new VM Name and checking afterwards to make sure the Shutdown Policy service has been created
+
+# Exercise 3 : Conditional Services
+
+A common activity is needing to only deploy certain Azure services, based on parameter input.  In this exercise, we will explore this using a load balancer as an example.
+
+1. Add a new parameter called *Environment* which will ultimately inform the decision to create certain resources and configuration.
+
+    ```json
+        "Environment": {
+            "type": "string",
+            "defaultValue": "Dev",
+            "allowedValues": [
+                "Dev",
+                "Pre-Prod",
+                "Prod"
+            ]
+        }
+
+1. Add a Load Balancer resource to the template.
+
+    ```json
+        {
+            "condition": "[equals(parameters('Environment'), 'Prod')]",
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('loadBalancerName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                {
+                    "properties": {
+                    "subnet": {
+                        "id": "[variables('vmSubnetRef')]"
+                    },
+                    "privateIPAllocationMethod": "Dynamic"
+                    },
+                    "name": "LoadBalancerFrontend"
+                }
+                ],
+                "backendAddressPools": [
+                {
+                    "name": "BackendWebPool"
+                }
+                ],
+                "loadBalancingRules": [
+                {
+                    "properties": {
+                    "frontendIPConfiguration": {
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/frontendIpConfigurations/LoadBalancerFrontend')]"
+                    },
+                    "backendAddressPool": {
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
+                    },
+                    "probe": {
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/probes/lbprobe')]"
+                    },
+                    "protocol": "Tcp",
+                    "frontendPort": 80,
+                    "backendPort": 80,
+                    "idleTimeoutInMinutes": 15
+                    },
+                    "Name": "lbrule"
+                }
+                ],
+                "probes": [
+                {
+                    "properties": {
+                    "protocol": "Tcp",
+                    "port": 80,
+                    "intervalInSeconds": 15,
+                    "numberOfProbes": 2
+                    },
+                    "name": "lbprobe"
+                }
+                ]
+            }
+            }
+
+1. In the variables section
+
+    ```json
+        //load balancer
+        "loadBalancerName": "lb",
+        "loadBalancerConfig": {
+        "None": [],
+        "Configured": [
+            {
+            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
+            }
+        ]
+        }
+
+
+1. In the *NIC config* add the lb config directly under the subnet definition
+
+    ```json
+        "subnet": {
+            "id": "[variables('vmSubnetRef')]"
+            },
+        "loadBalancerBackendAddressPools": "[if(equals(parameters('Environment'), 'Prod'),variables('loadBalancerConfig').Configured,variables('loadBalancerConfig').None)]"
+
