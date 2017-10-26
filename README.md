@@ -174,7 +174,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
 1. Deploy to Azure, using a new VM Name and checking afterwards to make sure the Shutdown Policy service has been created
 
-# Exercise 4 : Conditional Services
+# Exercise 4 : Conditional Services - Load Balancer (ILB)
 
 A common activity is needing to only deploy certain Azure services, based on parameter input.  In this exercise, we will explore this using a load balancer as an example.
 
@@ -268,6 +268,11 @@ A common activity is needing to only deploy certain Azure services, based on par
             ]
         }
 
+1. In the *NIC config* add a dependsOn statement to ensure the NIC will wait for the Load Balancer to be created first.
+    ```json
+    "dependsOn": [
+        "[resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName'))]"
+    ],
 
 1. In the *NIC config* add the lb config directly under the subnet definition
 
@@ -277,3 +282,133 @@ A common activity is needing to only deploy certain Azure services, based on par
             },
         "loadBalancerBackendAddressPools": "[if(equals(parameters('Environment'), 'Prod'),variables('loadBalancerConfig').Configured,variables('loadBalancerConfig').None)]"
 
+1. Deploy with a new VM Name parameter value using the Environment *Prod*, inspect the created resouces in the Azure Portal.
+
+1. Deploy with a new VM Name parameter value using the Environment *Dev*, inspect the created resouces in the Azure Portal.
+
+# Exercise 5 : Conditional Services - Availability Set
+
+1. Add a variable for the Availability set name
+    ```json
+    //Availability set
+    "availabilitySetName": "webAvailSet",
+
+1. Add another variable for the Availability set Id that we will conditionally use in the template
+    ```json
+    "availabilitySetId": {
+      "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+    },
+
+1. Add the availability set resouce definition
+    ```json
+    {
+      "condition": "[equals(parameters('Environment'), 'Prod')]",
+      "name": "[variables('availabilitySetName')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2016-04-30-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 3,
+        "managed": true
+      }
+    }
+
+1. Explicitly tell the VM it depends on the Availability Set.  Whether or not we are deploying the Availability Set, we need to make sure that it will be there before the VM.  Because the Availability Set is conditional, this will work just fine.
+    ```json
+    "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
+
+1. Add a property to the VM (properties section) to conditionally use the Availability Set
+    ```json
+    "properties": {
+        "availabilitySet": "[if(equals(parameters('Environment'), 'Prod'), variables('availabilitySetId'), json('null'))]",
+ 
+
+1. Deploy with a new VM Name parameter value using the Environment *Prod*, inspect the created resouces in the Azure Portal.
+
+1. Deploy with a new VM Name parameter value using the Environment *Dev*, inspect the created resouces in the Azure Portal.
+
+# Exercise 6 : SQL Server
+
+In this excercise we're going to create another VM, this time a SQL Server VM based on the SQL Server 2016 image from the Azure Marketplace.
+
+1. In the Azure Portal, follow the steps to create a SQL Server VM from this point https://ms.portal.azure.com/#create/Microsoft.SQLServer2016SP1StandardWindowsServer2016-ARM
+    Alternatively, choose any of the SQL images and proceed to complete the configuration information, halting before you hit the create button.  Instead look at the template script link and copy out the json template into a new json file in the Nested folder which you should call *SqlIaaS.json*
+
+    Click on the parameters section inside the portal and copy & paste it into a text editor where we can reference it later.
+
+    Now that you've extracted what the portal would have done to create the SQL VM, lets move it around a little and call this template from our other template.
+
+1. Remove the location parameter
+
+1. Do a search and replace for *parameters('location')* with *resourceGroup().location*
+
+1. In the Nic Configuration the resouce group name is hardcoded from when the template was scripted.  Replace the PublicIP property with the one defined below
+    ```json
+    "publicIpAddress": {
+        "id": "[resourceId(resourceGroup().name,'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]"
+    }
+
+1. Go through and add default values for each parameter, with the default based on the parameter values in your text editor for just these parameters;
+    1. virtualMachineSize
+    1. networkInterfaceName
+    1. publicIpAddressName
+    1. publicIpAddressType
+    1. publicIpAddressSku
+    1. autoShutdownStatus
+    1. autoShutdownTime
+    1. autoShutdownTimeZone
+    1. autoShutdownNotificationStatus
+    1. sqlConnectivityType
+    1. sqlPortNumber
+    1. sqlStorageDisksCount
+    1. sqlStorageWorkloadType
+    1. sqlStorageDisksConfigurationType
+    1. sqlStorageStartingDeviceId
+    1. sqlStorageDeploymentToken
+    1. sqlAutopatchingDayOfWeek
+    1. sqlAutopatchingStartHour
+    1. sqlAutopatchingWindowDuration
+    1. rServicesEnabled
+    
+1. Add a new parameter for the Virtual Network Resource Group Name
+    ```json
+    "virtualNetworkResourceGroup": {
+      "type": "string"
+    },
+
+1. Change the variable VNetId to
+    ```json
+    "vnetId": "[resourceId(parameters('virtualNetworkResourceGroup'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+
+1. Now we're ready to consume this template in the main tempalte
+    ```json
+        {
+      "apiVersion": "2017-05-10",
+      "name": "SqlVM",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('nestedTemplateRoot') ,'SqlIaaS.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "virtualMachineName": { "value": "[parameters('vmName')]" },
+          "virtualMachineSize": {"value": "Standard_DS13_v2"},
+          "adminUsername": { "value": "[variables('vmAdminUserName')]" },
+          "virtualNetworkResourceGroup": { "value": "[variables('virtualNetworkResourceGroup')]" },
+          "virtualNetworkName": { "value": "[variables('virtualNetworkName')]" },
+          "adminPassword": { "value": "[parameters('vmAdminPassword')]" },
+          "subnetName": { "value": "[variables('vmSubnetRef')]" }
+        }
+      },
+      "dependsOn": [
+
+      ]
+    }
+
+    Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
+
+1. Deploy!

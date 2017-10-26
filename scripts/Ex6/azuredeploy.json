@@ -1,0 +1,284 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vmAdminPassword": {
+      "type": "securestring"
+    },
+    "vmWindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2016-Datacenter",
+      "allowedValues": [
+        "2008-R2-SP1",
+        "2012-Datacenter",
+        "2012-R2-Datacenter",
+        "2016-Datacenter"
+      ]
+    },
+    "VmSize": {
+      "type": "string",
+      "defaultValue": "Small",
+      "allowedValues": [
+        "Small",
+        "Medium",
+        "Large"
+      ]
+    },
+    "Environment": {
+      "type": "string",
+      "defaultValue": "Dev",
+      "allowedValues": [
+        "Prod",
+        "QA",
+        "Dev"
+      ]
+    }
+
+  },
+  "variables": {
+    //enums
+    "VmShirtSize": {
+      "Small": "Standard_A0",
+      "Medium": "Standard_A3",
+      "Large": "Standard_D2_V2"
+    },
+
+    //vm
+    "vmAdminUserName": "adminsnow",
+    "vmVmSize": "[Variables('VmShirtSize')[Parameters('VmSize')]]",
+    //"vmVmSize": "[if(equals(parameters('VmSize'), 'Small'), 'Standard_A0', 'Standard_D2_V2')]",
+    "vmNicName": "[concat(parameters('vmName'), 'NetworkInterface')]",
+
+    //Vnet
+    "virtualNetworkName": "SnowLabVNet",
+    "virtualNetworkResourceGroup": "SnowLabNetwork",
+    "vmVnetID": "[resourceId(variables('virtualNetworkResourceGroup'), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+    "vmSubnetName": "Windows-Sandbox",
+    "vmSubnetRef": "[concat(variables('vmVnetID'), '/subnets/', variables('vmSubnetName'))]",
+
+    //load balancer
+    "loadBalancerName": "[concat('weblb', uniqueString(parameters('vmName')))]",
+    "loadBalancerConfig": {
+      "None": [],
+      "Configured": [
+        {
+          "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
+        }
+      ]
+    },
+
+    //Availability set
+    "availabilitySetName": "[concat('webAvailSet', uniqueString(parameters('vmName')))]",
+    "availabilitySetId": {
+      "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+    },
+
+    //Misc
+    "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex6/nested/"
+  },
+  "resources": [
+    {
+      "name": "[variables('vmNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName'))]"
+      ],
+      "tags": {
+        "displayName": "vmNic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('vmSubnetRef')]"
+              },
+              "loadBalancerBackendAddressPools": "[if(equals(parameters('Environment'), 'Prod'),variables('loadBalancerConfig').Configured,variables('loadBalancerConfig').None)]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[parameters('vmName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-04-30-preview",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]",
+        "[resourceId('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
+      ],
+      "tags": {
+        "displayName": "vm"
+      },
+      "properties": {
+        "availabilitySet": "[if(equals(parameters('Environment'), 'Prod'), variables('availabilitySetId'), json('null'))]",
+        "hardwareProfile": {
+          "vmSize": "[variables('vmVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[variables('vmAdminUsername')]",
+          "adminPassword": "[parameters('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "[parameters('vmWindowsOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Standard_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "Shutdown-policy",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('nestedTemplateRoot') ,'Shutdown.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "virtualMachineName": { "value": "[parameters('vmName')]" }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ]
+    },
+    {
+      "condition": "[equals(parameters('Environment'), 'Prod')]",
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/loadBalancers",
+      "name": "[variables('loadBalancerName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "properties": {
+              "subnet": {
+                "id": "[variables('vmSubnetRef')]"
+              },
+              "privateIPAllocationMethod": "Dynamic"
+            },
+            "name": "LoadBalancerFrontend"
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "BackendWebPool"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/frontendIpConfigurations/LoadBalancerFrontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/backendAddressPools/BackendWebPool')]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')), '/probes/lbprobe')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 80,
+              "backendPort": 80,
+              "idleTimeoutInMinutes": 15
+            },
+            "Name": "lbrule"
+          }
+        ],
+        "probes": [
+          {
+            "properties": {
+              "protocol": "Tcp",
+              "port": 80,
+              "intervalInSeconds": 15,
+              "numberOfProbes": 2
+            },
+            "name": "lbprobe"
+          }
+        ]
+      }
+    },
+    //{
+    //  "condition": "[equals(parameters('Environment'), 'Prod')]",
+    //  "type": "Microsoft.Compute/availabilitySets",
+    //  "apiVersion": "2017-03-30",
+    //  "name": "[variables('availabilitySetName')]",
+    //  "location": "[resourceGroup().location]",
+    //  "properties": {
+    //    "platformFaultDomainCount": 2,
+    //    "platformUpdateDomainCount": 3
+    //  },
+    //  "sku": {
+    //    "name": "Aligned"
+    //  }
+    //},
+    {
+      "condition": "[equals(parameters('Environment'), 'Prod')]",
+      "name": "[variables('availabilitySetName')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2016-04-30-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 3,
+        "managed": true
+      }
+    },
+    {
+      "apiVersion": "2017-05-10",
+      "name": "SqlVM",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('nestedTemplateRoot') ,'SqlIaaS.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "virtualMachineName": { "value": "[concat(parameters('vmName'),'-sql')]" },
+          "virtualMachineSize": {"value": "Standard_DS13_v2"},
+          "adminUsername": { "value": "[variables('vmAdminUserName')]" },
+          "virtualNetworkResourceGroup": { "value": "[variables('virtualNetworkResourceGroup')]" },
+          "virtualNetworkName": { "value": "[variables('virtualNetworkName')]" },
+          "adminPassword": { "value": "[parameters('vmAdminPassword')]" },
+          "subnetName": { "value": "[variables('vmSubnetName')]" }
+        }
+      },
+      "dependsOn": [
+
+      ]
+    }
+  ],
+  "outputs": {}
+}
