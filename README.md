@@ -75,9 +75,9 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
     1. vmName
     1. vmAdminPassword
     1. vmWindowsOSVersion
-You'll do this by creating variables with the same name, then changing the reference to them throughout the template from parameters('name') to variables('name')
+    You'll do this by creating variables with the same name, then changing the reference to them throughout the template from parameters('name') to variables('name')
 
-You should have something that looks like this
+    You should have something that looks like this
     ![image](./media/StageOneParamsVariables.png) 
 
 1. At this stage several changes have been made, all of which we haven't tested out by deploying the VM.  Therefore we should deploy the VM to Azure and make sure creation completes successfully before proceeding too far.
