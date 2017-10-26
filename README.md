@@ -53,13 +53,17 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
     ```json
         "osDisk": {
-            "createOption": "fromImage",
+            "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "Standard_LRS"
             }
           },
     ```
-1. Now remove all references to the storage account from the template as it is no longer needed.  Visual Studio can help this process, in the JSON Outline, find the *Storage* resource 
+    Your properties section structure should look like this;
+    ![image](./media/VmProperties.png) 
+
+
+1. Now remove all references to the storage account from the template as it is no longer needed.  In the JSON Outline, search for *tmpstorage* and remove the service as well as all references to it. 
 
 1. We need to change the API version for the *Virtual Machine*  because the older API versions don't know about managed disks.  
     ```json
