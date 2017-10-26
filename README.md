@@ -412,3 +412,12 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
     Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
 
 1. Deploy!
+
+# Exercise 7 : Network Security Groups
+
+
+
+# Exercise 8 : Domain joining with Powershell DSC
+
+
+
