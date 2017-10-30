@@ -62,19 +62,20 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
     Your properties section structure should look like this;
     ![image](./media/VmProperties.png) 
 
-
-1. Now remove all references to the storage account from the template as it is no longer needed.  In the JSON Outline, search for *tmpstorage* and remove the service as well as all references to it. 
-
 1. We need to change the API version for the *Virtual Machine*  because the older API versions don't know about managed disks.  
     ```json
         "apiVersion": "2016-04-30-preview"  
 
+1. Now remove all references to the storage account from the template as it is no longer needed.  In the JSON Outline, search for *tmpstorage* and remove the service as well as all references to it. 
+
 1. Add *2016-Datacenter* to the parameter list of Windows OS Versions and make it the default
 
-1. Now we want tor educe the list of template parameters to really just being the ones we want the user to supply;
+1. Now we want tor reduce the list of template parameters to just being the ones we want the user to supply which are;
     1. vmName
     1. vmAdminPassword
     1. vmWindowsOSVersion
+
+    For all the other Parameters you should *move* to the variables section.
     You'll do this by creating variables with the same name, then changing the reference to them throughout the template from parameters('name') to variables('name')
 
     You should have something that looks like this
@@ -125,14 +126,15 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
             "Small": "Standard_A0",
             "Medium": "Standard_A3",
             "Large": "Standard_D2_V2"
-        },
+        }
     ...
 
 1. Now we can changed the *vmVmSize* variable, replacing the If statement with something a little more clever.
 
     ```json
-        "vmVmSize": "[Variables('VmShirtSize')[Parameters('VmSize')]]",
-    ...
+        "vmVmSize": "[Variables('VmShirtSize')[Parameters('VmSize')]]"
+    
+1. Deploy the VM again selecting a different T-Shirt size, watching the existing VM resize.
 
 # Exercise 3 : Nested templates
 
@@ -142,9 +144,15 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
 1. If you examine the file, you'll see it's exactly the same template format that you're used to.  This template takes 1 parameter, the *Virtual Machine Name* and creates a scheduled shutdown of it at 7pm.  
 
-1. In order to call this template from our main template file, we have to add a resource of *Microsoft.Resources/deployments*
+1. Add the variable *nestedTemplateRoot* in the variables section.  
+    As Nested Templates will be pulled by the Azure API they need to be publically accessible.  We'll specify the root path once in the Variables section that can be used by any/all of the Nested Templates we end up referencing from this template.
 
-1. Add the resouce to your template, noticing that we're 
+    ```json
+        "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/"
+
+
+1. In order to call this template from our main template file, we have to add a resource of *Microsoft.Resources/deployments*
+    Add the resouce to your template, noticing that we're 
     1. Passing a parameter down to the template for the VM Name that comes from the main template Parameters
     1. Specifying a variable to be used as the path to the Nested Template.  This could be a local path or an http one.
 
@@ -160,7 +168,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
                 "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                "virtualMachineName": { "value": "[parameters('vmName')]" }
+                    "virtualMachineName": { "value": "[parameters('vmName')]" }
                 }
             },
             "dependsOn": [
@@ -168,9 +176,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
             ]
         }
 
-1. Add the variable *nestedTemplateRoot* in the variables section
-    ```json
-        "nestedTemplateRoot": "https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex3/nested/"
+    Notice that in the parameter block we're using the parameter name from the nested template, and giving it a specific value which just so happens to align to an existing Paramter in our master template.  It could quite easily have been a variable or a string constant.
 
 1. Deploy to Azure, using a new VM Name and checking afterwards to make sure the Shutdown Policy service has been created
 
@@ -333,7 +339,8 @@ A common activity is needing to only deploy certain Azure services, based on par
 
 In this excercise we're going to create another VM, this time a SQL Server VM based on the SQL Server 2016 image from the Azure Marketplace.
 
-1. In the Azure Portal, follow the steps to create a SQL Server VM from this point https://ms.portal.azure.com/#create/Microsoft.SQLServer2016SP1StandardWindowsServer2016-ARM
+1. In the Azure Portal, follow the steps to create a SQL Server VM from this point - making sure to reference the existing Virtual Network and subnet that our other Windows VM uses. 
+    https://ms.portal.azure.com/#create/Microsoft.SQLServer2016SP1StandardWindowsServer2016-ARM
     Alternatively, choose any of the SQL images and proceed to complete the configuration information, halting before you hit the create button.  Instead look at the template script link and copy out the json template into a new json file in the Nested folder which you should call *SqlIaaS.json*
 
     Click on the parameters section inside the portal and copy & paste it into a text editor where we can reference it later.
@@ -371,6 +378,9 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
     1. sqlAutopatchingStartHour
     1. sqlAutopatchingWindowDuration
     1. rServicesEnabled
+
+    After you're finished the parameters should look something like this.
+    ![image](./media/sqlparam.png) 
     
 1. Add a new parameter for the Virtual Network Resource Group Name
     ```json
@@ -415,9 +425,30 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
 
 # Exercise 7 : Network Security Groups
 
+1. Create an NSG for the web VM
 
+1. Create an NSG for the SQL VM
+
+1. Allow 1433 between the web and SQL
 
 # Exercise 8 : Domain joining with Powershell DSC
 
+1. Deploy a domain controller
 
+# Exercise 9 : Web tier
 
+1. Add project name paramter
+
+1. Change the naming of the load balancer and availability set to use the project name
+
+1. Add a second web server
+
+1. Install IIS with DSC
+
+1. Install new website that reads from a SQL Db.
+
+1. Add public IP
+
+1. Add public load balancer
+
+1. Deploy
