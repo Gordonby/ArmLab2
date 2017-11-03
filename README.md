@@ -426,12 +426,10 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
     }
 
 
-    Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
+Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
 
 
-1. We're almost ready to deploy, but first we need to put these nested files in your own storage account.  When the Azure deployment encounters a nested/referenced file - it looks for it on a public endpoint.  Up until this point we've used Ex3 in this Github account but 
-
-1. Create a new General Purpose storage account
+1. We're almost ready to deploy, but first we need to put these nested files in your own storage account.  When the Azure deployment encounters a nested/referenced file - it looks for it on a public endpoint.  Up until this point we've used Ex3 in this Github account but we  now need to use the specific SQL template you've just been working on.  In the Azure Portal, create a new General Purpose storage account.
 
 1. Once it has been created, open the Storage Account and in the BLOB section, create a container with a *BLOB access policy*. 
 
