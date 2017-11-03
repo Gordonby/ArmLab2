@@ -398,7 +398,8 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
     "vmSubnetRef": "[concat(variables('vmVnetID'), '/subnets/', variables('vmSubnetName'))]",
 
 
-1. Now we're ready to consume this template in the main template
+1. Now we're ready to consume this template in the main template.  Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
+
     ```json
         {
       "apiVersion": "2017-05-10",
@@ -425,10 +426,6 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
       ]
     }
 
-
-Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
-
-
 1. We're almost ready to deploy, but first we need to put these nested files in your own storage account.  When the Azure deployment encounters a nested/referenced file - it looks for it on a public endpoint.  Up until this point we've used Ex3 in this Github account but we  now need to use the specific SQL template you've just been working on.  In the Azure Portal, create a new General Purpose storage account.
 
 1. Once it has been created, open the Storage Account and in the BLOB section, create a container with a *BLOB access policy*. 
@@ -445,7 +442,7 @@ Pay specific attention to the parameters block.  We're passing just the variable
 
     So the great thing about Visual Studio is that deployment is super easy.  However it's not doing anything clever with our nested files.  When you're making a change to your nested files, those changes will not be pushed up to your Azure storage account.
 
-1. Download this powershell file
+1. Download this powershell file located here : https://raw.githubusercontent.com/Gordonby/ArmLab2/master/scripts/Ex8/deployArmLab.ps1
 
 1. Change the path parameter to point to your local path of the nested files
 
