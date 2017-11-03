@@ -264,7 +264,7 @@ A common activity is needing to only deploy certain Azure services, based on par
 
     ```json
         //load balancer
-        "loadBalancerName": "lb",
+        "loadBalancerName": "[concat('weblb-', uniqueString(parameters('vmName')))]",
         "loadBalancerConfig": {
             "None": [],
             "Configured": [
@@ -297,7 +297,7 @@ A common activity is needing to only deploy certain Azure services, based on par
 1. Add a variable for the Availability set name
     ```json
     //Availability set
-    "availabilitySetName": "webAvailSet",
+    "availabilitySetName": "[concat('webAvailSet-', uniqueString(parameters('vmName')))]",
 
 1. Add another variable for the Availability set Id that we will conditionally use in the template
     ```json
@@ -392,7 +392,13 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
     ```json
     "vnetId": "[resourceId(parameters('virtualNetworkResourceGroup'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
 
-1. Now we're ready to consume this template in the main tempalte
+1. Back in the main template now, we need to add a new variable to pass in just the Subnet name, and not the ResouceId for the subnet.  Replace the vmSubnetRef variable with these two variables;
+    ```json
+    "vmSubnetName": "Windows-Sandbox",
+    "vmSubnetRef": "[concat(variables('vmVnetID'), '/subnets/', variables('vmSubnetName'))]",
+
+
+1. Now we're ready to consume this template in the main template
     ```json
         {
       "apiVersion": "2017-05-10",
@@ -411,7 +417,7 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
           "virtualNetworkResourceGroup": { "value": "[variables('virtualNetworkResourceGroup')]" },
           "virtualNetworkName": { "value": "[variables('virtualNetworkName')]" },
           "adminPassword": { "value": "[parameters('vmAdminPassword')]" },
-          "subnetName": { "value": "[variables('vmSubnetRef')]" }
+          "subnetName": { "value": "[variables('vmSubnetName')]" }
         }
       },
       "dependsOn": [
@@ -419,11 +425,39 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
       ]
     }
 
+
     Pay specific attention to the parameters block.  We're passing just the variables that we didn't associate a default value with in an earlier step.
+
+
+1. We're almost ready to deploy, but first we need to put these nested files in your own storage account.  When the Azure deployment encounters a nested/referenced file - it looks for it on a public endpoint.  Up until this point we've used Ex3 in this Github account but 
+
+1. Create a new General Purpose storage account
+
+1. Once it has been created, open the Storage Account and in the BLOB section, create a container with a *BLOB access policy*. 
+
+1. In the contaienr, upload your SQl and Shutdown templates.
+
+1. Click on one of the files and inspect the URL, copy everything but the filename and replace the value in the 
+    ```json
+    "nestedTemplateRoot": "https://yourstorageaccountcontainerpath/"
 
 1. Deploy!
 
-# Exercise 7 : Network Security Groups
+# Exercise 8 : Deploying with Powershell instead of Visual Studio.
+
+    So the great thing about Visual Studio is that deployment is super easy.  However it's not doing anything clever with our nested files.  When you're making a change to your nested files, those changes will not be pushed up to your Azure storage account.
+
+1. Download this powershell file
+
+1. Change the path parameter to point to your local path of the nested files
+
+1. Change the storage account name parameter to your own storage account name
+
+1. Change the storage access key parameter to the primary key from your storage account
+
+1. Now when we deploy, we will run the powershell file instead of using Visual Studio.
+
+# Exercise 9 : Network Security Groups
 
 1. Create an NSG for the web VM
 
@@ -431,11 +465,11 @@ In this excercise we're going to create another VM, this time a SQL Server VM ba
 
 1. Allow 1433 between the web and SQL
 
-# Exercise 8 : Domain joining with Powershell DSC
+# Exercise 10 : Domain joining with Powershell DSC
 
 1. Deploy a domain controller
 
-# Exercise 9 : Web tier
+# Exercise 11 : Web tier
 
 1. Add project name paramter
 
