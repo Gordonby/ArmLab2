@@ -6,7 +6,7 @@ It takes you to a point when you have a single VM deployed in a new vnet, using 
 
 ## Learning Objectives
 
-1. Working with existing Azure resources
+1. Working with existing Azure resources.
 
 1. Introduction to managed disks instead of storage accounts for VM disk storage
 
